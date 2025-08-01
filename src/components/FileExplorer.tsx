@@ -21,7 +21,9 @@ import {
   Plus, 
   FolderPlus, 
   Trash2, 
-  Edit 
+  Edit,
+  ArrowLeft,
+  ChevronRight 
 } from 'lucide-react';
 import { useNotes, Note, Folder } from '@/hooks/useNotes';
 import { FileUpload } from './FileUpload';
@@ -46,11 +48,12 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
   const [newNoteName, setNewNoteName] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const handleCreateNote = async () => {
     if (!newNoteName.trim()) return;
     
-    await createNote(newNoteName, selectedFolderId || undefined);
+    await createNote(newNoteName, currentFolderId || undefined);
     setNewNoteName('');
     setShowNewNote(false);
   };
@@ -58,9 +61,24 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
     
-    await createFolder(newFolderName);
+    await createFolder(newFolderName, currentFolderId || undefined);
     setNewFolderName('');
     setShowNewFolder(false);
+  };
+
+  const handleFolderClick = (folderId: string) => {
+    setCurrentFolderId(folderId);
+  };
+
+  const handleBackClick = () => {
+    const currentFolder = folders.find(f => f.id === currentFolderId);
+    setCurrentFolderId(currentFolder?.parent_folder_id || null);
+  };
+
+  const getCurrentFolderName = () => {
+    if (!currentFolderId) return 'Arquivos';
+    const folder = folders.find(f => f.id === currentFolderId);
+    return folder?.name || 'Arquivos';
   };
 
   const renderFolderContents = (parentId: string | null = null) => {
@@ -72,9 +90,13 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
         {folderItems.map(folder => (
           <ContextMenu key={folder.id}>
             <ContextMenuTrigger>
-              <div className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer">
+              <div 
+                className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer"
+                onClick={() => handleFolderClick(folder.id)}
+              >
                 <FolderIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{folder.name}</span>
+                <span className="text-sm flex-1">{folder.name}</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
@@ -180,8 +202,27 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
         </div>
       </div>
 
+      {/* Navigation Header */}
+      <div className="px-4 py-2 border-b border-sidebar-border bg-sidebar-accent/50">
+        <div className="flex items-center gap-2">
+          {currentFolderId && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackClick}
+              className="h-6 px-2"
+            >
+              <ArrowLeft className="h-3 w-3" />
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground font-medium">
+            {getCurrentFolderName()}
+          </span>
+        </div>
+      </div>
+
       <div className="p-2 overflow-y-auto">
-        {renderFolderContents()}
+        {renderFolderContents(currentFolderId)}
       </div>
     </div>
   );
