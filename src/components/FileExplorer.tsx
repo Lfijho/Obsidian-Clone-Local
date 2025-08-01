@@ -24,6 +24,7 @@ import {
   Edit 
 } from 'lucide-react';
 import { useNotes, Note, Folder } from '@/hooks/useNotes';
+import { FileUpload } from './FileUpload';
 
 interface FileExplorerProps {
   onNoteSelect: (note: Note) => void;
@@ -115,7 +116,7 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
       <div className="p-4 border-b border-sidebar-border">
         <h2 className="font-semibold text-sidebar-foreground mb-3">Arquivos</h2>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-2">
           <Dialog open={showNewNote} onOpenChange={setShowNewNote}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="flex-1">
@@ -172,6 +173,10 @@ export const FileExplorer = ({ onNoteSelect, currentNote }: FileExplorerProps) =
               </div>
             </DialogContent>
           </Dialog>
+        </div>
+        
+        <div className="mb-3">
+          <FileUpload />
         </div>
       </div>
 

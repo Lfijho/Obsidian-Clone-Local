@@ -59,7 +59,7 @@ export const useNotes = () => {
   }, [user]);
 
   // Create note
-  const createNote = async (title: string, folderId?: string) => {
+  const createNote = async (title: string, folderId?: string, content?: string) => {
     if (!user) return null;
 
     try {
@@ -67,7 +67,7 @@ export const useNotes = () => {
         .from('notes')
         .insert({
           title,
-          content: '',
+          content: content || '',
           folder_id: folderId || null,
           user_id: user.id,
         })
