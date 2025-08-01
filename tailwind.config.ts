@@ -61,6 +61,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				editor: {
+					background: 'hsl(var(--editor-background))',
+					foreground: 'hsl(var(--editor-foreground))',
+					line: 'hsl(var(--editor-line))',
+					selection: 'hsl(var(--editor-selection))'
+				},
+				wikilink: {
+					DEFAULT: 'hsl(var(--wikilink))',
+					new: 'hsl(var(--wikilink-new))',
+					hover: 'hsl(var(--wikilink-hover))'
 				}
 			},
 			borderRadius: {
