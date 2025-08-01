@@ -41,7 +41,9 @@ export const useFileUpload = () => {
       const filePath = `${user.id}/${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('images')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: true
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -85,7 +87,9 @@ export const useFileUpload = () => {
       const filePath = `${user.id}/${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('markdown-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: true
+        });
 
       if (uploadError) {
         throw uploadError;
