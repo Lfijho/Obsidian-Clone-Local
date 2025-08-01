@@ -52,7 +52,7 @@ export const FileUpload = () => {
         className="flex items-center gap-2"
       >
         <Upload className="h-4 w-4" />
-        {uploading ? 'Importando...' : 'Arquivos .md'}
+        {uploading ? 'Importando...' : 'Arquivos .md e imagens'}
       </Button>
       
       <Button
@@ -69,7 +69,7 @@ export const FileUpload = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".md"
+        accept=".md,.png,.jpg,.jpeg"
         multiple
         onChange={handleFileChange}
         className="hidden"
@@ -78,6 +78,7 @@ export const FileUpload = () => {
       <input
         ref={folderInputRef}
         type="file"
+        accept=".md,.png,.jpg,.jpeg"
         /* @ts-ignore */
         webkitdirectory=""
         directory=""

@@ -26,6 +26,35 @@ export const useFileUpload = () => {
     return newFolder.id;
   };
 
+  const uploadImageFile = async (file: File, targetFolderId?: string) => {
+    if (!user) {
+      return { success: false, fileName: file.name, error: 'User not authenticated' };
+    }
+
+    const isImage = /\.(png|jpe?g)$/i.test(file.name);
+    if (!isImage) {
+      return { success: false, fileName: file.name, error: 'Invalid image format' };
+    }
+
+    try {
+      // Upload image to storage
+      const filePath = `${user.id}/${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      return { success: true, fileName: file.name, isImage: true };
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return { success: false, fileName: file.name, error, isImage: true };
+    }
+  };
+
   const uploadMarkdownFile = async (file: File, targetFolderId?: string) => {
     if (!user) {
       toast({
@@ -120,7 +149,17 @@ export const useFileUpload = () => {
         const targetFolderId = folderPath ? folderMap.get(folderPath) : undefined;
         
         for (const file of folderFiles) {
-          const result = await uploadMarkdownFile(file, targetFolderId);
+          let result;
+          
+          // Check if it's an image or markdown file
+          if (/\.(png|jpe?g)$/i.test(file.name)) {
+            result = await uploadImageFile(file, targetFolderId);
+          } else if (file.name.endsWith('.md')) {
+            result = await uploadMarkdownFile(file, targetFolderId);
+          } else {
+            result = { success: false, fileName: file.name, error: 'Unsupported file type' };
+          }
+          
           results.push(result);
         }
       }
