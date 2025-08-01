@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
+import { extractImageReferences } from '@/lib/imageUtils';
 
 export interface Note {
   id: string;
@@ -136,7 +137,7 @@ export const useNotes = () => {
         .select('*')
         .eq('id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (fetchError) {
         console.error('Error fetching note for deletion:', fetchError);
@@ -144,10 +145,26 @@ export const useNotes = () => {
       }
 
       if (!noteData) {
-        throw new Error('Nota não encontrada');
+        throw new Error('Nota não encontrada ou você não tem permissão para excluí-la');
       }
 
-      // Delete the note
+      // Delete associated images from storage first
+      try {
+        const imageReferences = extractImageReferences(noteData.content);
+        for (const imagePath of imageReferences) {
+          if (!imagePath.startsWith('http')) {
+            const fileName = imagePath.split('/').pop() || imagePath;
+            await supabase.storage
+              .from('images')
+              .remove([`${user.id}/${fileName}`]);
+          }
+        }
+      } catch (storageError) {
+        console.error('Error deleting images from storage:', storageError);
+        // Continue with note deletion even if image deletion fails
+      }
+
+      // Delete the note from database
       const { error: deleteError } = await supabase
         .from('notes')
         .delete()
@@ -155,7 +172,7 @@ export const useNotes = () => {
         .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error('Error deleting note:', deleteError);
+        console.error('Error deleting note from database:', deleteError);
         throw deleteError;
       }
 
@@ -168,13 +185,13 @@ export const useNotes = () => {
 
       toast({
         title: "Sucesso",
-        description: "Nota excluída com sucesso.",
+        description: "Nota e imagens associadas excluídas com sucesso.",
       });
     } catch (error) {
       console.error('Error in deleteNote:', error);
       toast({
         title: "Erro",
-        description: "Erro ao excluir nota. Tente novamente.",
+        description: error instanceof Error ? error.message : "Erro ao excluir nota. Tente novamente.",
         variant: "destructive",
       });
     }

@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { useNotes, Note } from '@/hooks/useNotes';
 import { useAuth } from '@/hooks/useAuth';
-import { getImageUrl } from '@/lib/imageUtils';
+import { getImageUrl, updateImageReferences } from '@/lib/imageUtils';
 import 'highlight.js/styles/github-dark.css';
 
 interface MarkdownEditorProps {
@@ -28,7 +28,9 @@ export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
   useEffect(() => {
     if (note) {
       setTitle(note.title);
-      setContent(note.content);
+      // Update image references in content when displaying
+      const updatedContent = user ? updateImageReferences(note.content, user.id) : note.content;
+      setContent(updatedContent);
       setIsDirty(false);
       setLastSaved(new Date(note.updated_at));
     } else {
@@ -37,7 +39,7 @@ export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
       setIsDirty(false);
       setLastSaved(null);
     }
-  }, [note]);
+  }, [note, user]);
 
   // Auto-save functionality
   const saveNote = useCallback(async () => {
