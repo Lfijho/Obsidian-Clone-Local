@@ -8,6 +8,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { useNotes, Note } from '@/hooks/useNotes';
+import { useAuth } from '@/hooks/useAuth';
+import { getImageUrl } from '@/lib/imageUtils';
 import 'highlight.js/styles/github-dark.css';
 
 interface MarkdownEditorProps {
@@ -16,6 +18,7 @@ interface MarkdownEditorProps {
 
 export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
   const { updateNote, createNote, findNoteByTitle } = useNotes();
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -95,7 +98,7 @@ export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
     }
   };
 
-  // Render markdown with custom wikilink handling
+  // Render markdown with custom wikilink and image handling
   const components = {
     p: ({ children, ...props }: any) => {
       if (typeof children === 'string') {
@@ -128,6 +131,15 @@ export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
         return <p {...props}>{processedChildren}</p>;
       }
       return <p {...props}>{children}</p>;
+    },
+    img: ({ src, alt, ...props }: any) => {
+      // If it's not already a full URL and we have a user, convert to Supabase URL
+      if (user && src && !src.startsWith('http')) {
+        const fileName = src.split('/').pop() || src;
+        const imageUrl = getImageUrl(user.id, fileName);
+        return <img {...props} src={imageUrl} alt={alt} className="max-w-full h-auto rounded-md" />;
+      }
+      return <img {...props} src={src} alt={alt} className="max-w-full h-auto rounded-md" />;
     },
   };
 

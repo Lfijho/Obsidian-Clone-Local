@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useNotes } from './useNotes';
 import { toast } from '@/hooks/use-toast';
+import { extractImageReferences, updateImageReferences } from '@/lib/imageUtils';
 
 export const useFileUpload = () => {
   const { user } = useAuth();
@@ -57,7 +58,7 @@ export const useFileUpload = () => {
     }
   };
 
-  const uploadMarkdownFile = async (file: File, targetFolderId?: string) => {
+  const uploadMarkdownFile = async (file: File, targetFolderId?: string, availableImages?: Set<string>) => {
     if (!user) {
       toast({
         title: "Erro",
@@ -78,7 +79,12 @@ export const useFileUpload = () => {
 
     try {
       // Ler o conteúdo do arquivo
-      const fileContent = await file.text();
+      let fileContent = await file.text();
+      
+      // Se temos imagens disponíveis, atualizar as referências no markdown
+      if (availableImages && availableImages.size > 0) {
+        fileContent = updateImageReferences(fileContent, user.id);
+      }
       
       // Extrair o título do nome do arquivo (removendo .md)
       const title = file.name.replace('.md', '');
@@ -95,7 +101,7 @@ export const useFileUpload = () => {
         throw uploadError;
       }
 
-      // Criar uma nova nota com o conteúdo do arquivo
+      // Criar uma nova nota com o conteúdo atualizado
       await createNote(title, targetFolderId, fileContent);
 
       return { success: true, fileName: file.name };
@@ -148,23 +154,36 @@ export const useFileUpload = () => {
         }
       }
       
-      // Upload files to their respective folders
+      // First, upload all images
+      const uploadedImages = new Set<string>();
+      
       for (const [folderPath, folderFiles] of filesByFolder.entries()) {
         const targetFolderId = folderPath ? folderMap.get(folderPath) : undefined;
         
         for (const file of folderFiles) {
-          let result;
-          
-          // Check if it's an image or markdown file
           if (/\.(png|jpe?g)$/i.test(file.name)) {
-            result = await uploadImageFile(file, targetFolderId);
-          } else if (file.name.endsWith('.md')) {
-            result = await uploadMarkdownFile(file, targetFolderId);
-          } else {
-            result = { success: false, fileName: file.name, error: 'Unsupported file type' };
+            const result = await uploadImageFile(file, targetFolderId);
+            results.push(result);
+            
+            if (result?.success) {
+              uploadedImages.add(file.name);
+            }
           }
-          
-          results.push(result);
+        }
+      }
+      
+      // Then, upload markdown files with updated image references
+      for (const [folderPath, folderFiles] of filesByFolder.entries()) {
+        const targetFolderId = folderPath ? folderMap.get(folderPath) : undefined;
+        
+        for (const file of folderFiles) {
+          if (file.name.endsWith('.md')) {
+            const result = await uploadMarkdownFile(file, targetFolderId, uploadedImages);
+            results.push(result);
+          } else if (!/\.(png|jpe?g)$/i.test(file.name)) {
+            // Handle other unsupported file types
+            results.push({ success: false, fileName: file.name, error: 'Unsupported file type' });
+          }
         }
       }
       
