@@ -133,10 +133,13 @@ export const MarkdownEditor = ({ note }: MarkdownEditorProps) => {
       return <p {...props}>{children}</p>;
     },
     img: ({ src, alt, ...props }: any) => {
+      console.log('Rendering image - src:', src, 'alt:', alt, 'user:', user?.id);
+      
       // If it's not already a full URL and we have a user, convert to Supabase URL
       if (user && src && !src.startsWith('http')) {
         const fileName = src.split('/').pop() || src;
         const imageUrl = getImageUrl(user.id, fileName);
+        console.log('Converting image URL from', src, 'to', imageUrl);
         return <img {...props} src={imageUrl} alt={alt} className="max-w-full h-auto rounded-md" />;
       }
       return <img {...props} src={src} alt={alt} className="max-w-full h-auto rounded-md" />;

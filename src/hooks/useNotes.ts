@@ -130,13 +130,36 @@ export const useNotes = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // First get the note to check if it exists
+      const { data: noteData, error: fetchError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching note for deletion:', fetchError);
+        throw fetchError;
+      }
+
+      if (!noteData) {
+        throw new Error('Nota não encontrada');
+      }
+
+      // Delete the note
+      const { error: deleteError } = await supabase
         .from('notes')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Error deleting note:', deleteError);
+        throw deleteError;
+      }
 
+      // Update local state
       setNotes(prev => prev.filter(note => note.id !== id));
       
       if (currentNote?.id === id) {
@@ -148,7 +171,7 @@ export const useNotes = () => {
         description: "Nota excluída com sucesso.",
       });
     } catch (error) {
-      console.error('Error deleting note:', error);
+      console.error('Error in deleteNote:', error);
       toast({
         title: "Erro",
         description: "Erro ao excluir nota. Tente novamente.",
